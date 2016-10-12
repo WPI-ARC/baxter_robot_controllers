@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
-  message_generation
   kdl_parser
 )
 find_package(cmake_modules REQUIRED)
@@ -52,12 +51,6 @@ find_package(Eigen REQUIRED)
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-add_message_files(DIRECTORY msg FILES JointTarget.msg)
-
-## Generate added messages and services with any dependencies listed here
-generate_messages(DEPENDENCIES trajectory_msgs control_msgs std_msgs)
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -69,7 +62,7 @@ generate_messages(DEPENDENCIES trajectory_msgs control_msgs std_msgs)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(INCLUDE_DIRS include
 #  LIBRARIES baxter_robot_controllers
-CATKIN_DEPENDS arc_utilities geometry_msgs trajectory_msgs control_msgs baxter_core_msgs roscpp sensor_msgs std_msgs message_runtime kdl_parser DEPENDS system_lib Eigen)
+CATKIN_DEPENDS arc_utilities geometry_msgs trajectory_msgs control_msgs baxter_core_msgs roscpp sensor_msgs std_msgs kdl_parser DEPENDS system_lib Eigen)
 
 ###########
 ## Build ##

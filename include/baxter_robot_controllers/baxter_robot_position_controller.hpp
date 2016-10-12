@@ -14,7 +14,6 @@
 #include <sensor_msgs/JointState.h>
 #include <baxter_core_msgs/JointCommand.h>
 #include <control_msgs/JointTrajectoryControllerState.h>
-#include <baxter_robot_controllers/JointTarget.h>
 #include <baxter_robot_controllers/baxter_robot_config.hpp>
 #include <arc_utilities/pretty_print.hpp>
 #include <arc_utilities/eigen_helpers.hpp>
@@ -48,9 +47,9 @@ namespace baxter_robot_controllers
     public:
 
         BaxterRobotPositionController(ros::NodeHandle& nh,
-                                      const std::string& target_config_topic,
+                                      const std::string& position_command_topic,
                                       const std::string& config_feedback_topic,
-                                      const std::string& joint_command_topic,
+                                      const std::string& velocity_command_topic,
                                       const std::string& status_topic,
                                       const std::string& abort_service,
                                       const std::map<std::string, JointLimits>& joint_limits,
@@ -68,9 +67,9 @@ namespace baxter_robot_controllers
             joint_limits_ = joint_limits;
             joint_controller_params_ = joint_controller_params;
             status_pub_ = nh_.advertise<control_msgs::JointTrajectoryControllerState>(status_topic, 1, false);
-            command_pub_ = nh_.advertise<baxter_core_msgs::JointCommand>(joint_command_topic, 1, false);
+            command_pub_ = nh_.advertise<baxter_core_msgs::JointCommand>(velocity_command_topic, 1, false);
             feedback_sub_ = nh_.subscribe(config_feedback_topic, 1, &BaxterRobotPositionController::ConfigFeedbackCallback, this);
-            config_target_sub_ = nh_.subscribe(target_config_topic, 1, &BaxterRobotPositionController::ConfigTargetCallback, this);
+            config_target_sub_ = nh_.subscribe(position_command_topic, 1, &BaxterRobotPositionController::ConfigTargetCallback, this);
             abort_server_ = nh_.advertiseService(abort_service, &BaxterRobotPositionController::AbortCB, this);
         }
 
@@ -261,62 +260,70 @@ namespace baxter_robot_controllers
             }
         }
 
-        inline void ConfigTargetCallback(baxter_robot_controllers::JointTarget config_target)
+        inline void ConfigTargetCallback(baxter_core_msgs::JointCommand config_target)
         {
-            if ((config_target.name.size() == config_target.position.size()) && IsSubset(config_target.name, joint_names_))
+            if (config_target.mode == baxter_core_msgs::JointCommand::POSITION_MODE || config_target.mode == baxter_core_msgs::JointCommand::RAW_POSITION_MODE)
             {
-                // Push the joint state into a map
-                std::map<std::string, double> joint_state_map;
-                for (size_t idx = 0; idx < config_target.name.size(); idx++)
+                if (config_target.names.size() == config_target.command.size())
                 {
-                    const std::string& name = config_target.name[idx];
-                    const double position = config_target.position[idx];
-                    joint_state_map[name] = position;
-                }
-                // Extract the joint positions in order
-                std::vector<double> target_config(joint_names_.size(), 0.0);
-                bool config_valid = true;
-                for (size_t idx = 0; idx < joint_names_.size(); idx++)
-                {
-                    // Get the name of the joint
-                    const std::string& joint_name = joint_names_[idx];
-                    // Get the commanded value
-                    const auto found_itr = joint_state_map.find(joint_name);
-                    if (found_itr != joint_state_map.end())
+                    // Push the command into a map
+                    std::map<std::string, double> command_map;
+                    for (size_t idx = 0; idx < config_target.names.size(); idx++)
                     {
-                        const double position = found_itr->second;
-                        // Get the limits for the joint
-                        const auto limits_found_itr = joint_limits_.find(joint_name);
-                        // If we have limits saved, limit the joint command
-                        if (limits_found_itr != joint_limits_.end())
+                        const std::string& name = config_target.names[idx];
+                        const double command = config_target.command[idx];
+                        command_map[name] = command;
+                    }
+                    // Extract the joint commands in order
+                    std::vector<double> target_config(joint_names_.size(), 0.0);
+                    bool command_valid = true;
+                    for (size_t idx = 0; idx < joint_names_.size(); idx++)
+                    {
+                        // Get the name of the joint
+                        const std::string& joint_name = joint_names_[idx];
+                        // Get the commanded value
+                        const auto found_itr = command_map.find(joint_name);
+                        if (found_itr != command_map.end())
                         {
-                            const std::pair<double, double> limits = limits_found_itr->second.PositionLimits();
-                            const double lower_limit = limits.first;
-                            const double upper_limit = limits.second;
-                            const double limited_position = ClampValue(position, lower_limit, upper_limit);
-                            target_config[idx] = limited_position;
+                            const double position = found_itr->second;
+                            // Get the limits for the joint
+                            const auto limits_found_itr = joint_limits_.find(joint_name);
+                            // If we have limits saved, limit the joint command
+                            if (limits_found_itr != joint_limits_.end())
+                            {
+                                const std::pair<double, double> limits = limits_found_itr->second.PositionLimits();
+                                const double lower_limit = limits.first;
+                                const double upper_limit = limits.second;
+                                const double limited_position = ClampValue(position, lower_limit, upper_limit);
+                                target_config[idx] = limited_position;
+                            }
+                            // If we don't have limits saved, then we don't need to limit the joint value
+                            else
+                            {
+                                target_config[idx] = position;
+                            }
                         }
-                        // If we don't have limits saved, then we don't need to limit the joint value
                         else
                         {
-                            target_config[idx] = position;
+                            ROS_WARN("Invalid JointCommand: joint %s missing", joint_name.c_str());
+                            command_valid = false;
                         }
                     }
-                    else
+                    if (command_valid == true)
                     {
-                        ROS_WARN("Invalid target config: joint %s missing", joint_name.c_str());
-                        config_valid = false;
+                        target_config_ = target_config;
+                        target_config_valid_ = true;
                     }
                 }
-                if (config_valid == true)
+                else
                 {
-                    target_config_ = target_config;
-                    target_config_valid_ = true;
+                    ROS_WARN("Invalid JointCommand: %zu names, %zu commands", config_target.names.size(), config_target.command.size());
+                    target_config_valid_ = false;
                 }
             }
             else
             {
-                ROS_WARN("Invalid target config: %zu names, %zu positions", config_target.name.size(), config_target.position.size());
+                ROS_WARN("JointCommand mode is not POSITION_MODE or RAW_POSITION_MODE");
                 target_config_valid_ = false;
             }
         }

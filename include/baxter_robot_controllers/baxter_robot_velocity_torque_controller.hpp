@@ -57,9 +57,9 @@ namespace baxter_robot_controllers
     public:
 
         BaxterRobotVelocityTorqueController(ros::NodeHandle& nh,
-                                            const std::string& target_config_topic,
+                                            const std::string& velocity_command_topic,
                                             const std::string& config_feedback_topic,
-                                            const std::string& joint_command_topic,
+                                            const std::string& torque_command_topic,
                                             const std::string& abort_service,
                                             const std::string& xml_model_string,
                                             const std::map<std::string, JointLimits> joint_limits,
@@ -107,9 +107,9 @@ namespace baxter_robot_controllers
             //id_solver_ = std::shared_ptr<KDL::ChainIdSolver_RNE>(new KDL::ChainIdSolver_RNE(chain_, KDL::Vector(0.0, 0.0, -9.8)));
             id_solver_ = std::shared_ptr<KDL::ChainIdSolver_RNE>(new KDL::ChainIdSolver_RNE(chain_, KDL::Vector(0.0, 0.0, 0.0)));
             // Setup publishers and subscribers
-            command_pub_ = nh_.advertise<baxter_core_msgs::JointCommand>(joint_command_topic, 1, false);
+            command_pub_ = nh_.advertise<baxter_core_msgs::JointCommand>(torque_command_topic, 1, false);
             feedback_sub_ = nh_.subscribe(config_feedback_topic, 1, &BaxterRobotVelocityTorqueController::ConfigFeedbackCallback, this);
-            velocity_target_sub_ = nh_.subscribe(target_config_topic, 1, &BaxterRobotVelocityTorqueController::VelocityTargetCallback, this);
+            velocity_target_sub_ = nh_.subscribe(velocity_command_topic, 1, &BaxterRobotVelocityTorqueController::VelocityTargetCallback, this);
             abort_server_ = nh_.advertiseService(abort_service, &BaxterRobotVelocityTorqueController::AbortCB, this);
         }
 
