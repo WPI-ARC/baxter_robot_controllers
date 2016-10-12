@@ -34,7 +34,8 @@ int main(int argc, char** argv)
     nhp.param(std::string("abort_service"), abort_service, DEFAULT_ABORT_SERVICE);
     nhp.param(std::string("control_rate"), control_rate, DEFAULT_CONTROL_RATE);
     // Get the XML string of the URDF
-    const std::string xml_model_string = nh.param(std::string("robot_description"), std::string(""));
+    std::string xml_model_string;
+    nh.param(std::string("robot_description"), xml_model_string, std::string(""));
     // Joint limits
     const std::map<std::string, baxter_robot_controllers::JointLimits> joint_limits = baxter_robot_controllers::GetLeftArmLimits();
     // Joint PID params
