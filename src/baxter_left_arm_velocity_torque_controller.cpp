@@ -23,11 +23,16 @@ int main(int argc, char** argv)
     const std::string DEFAULT_TORQUE_COMMAND_TOPIC = "/robot/limb/left/joint_command";
     const std::string DEFAULT_ABORT_SERVICE = "baxter_left_arm_velocity_torque_controller/abort";
     const double DEFAULT_CONTROL_RATE = 1000.0; //25.0;
-    const std::string velocity_command_topic = nhp.param(std::string("velocity_command_topic"), DEFAULT_VELOCITY_COMMAND_TOPIC);
-    const std::string torque_command_topic = nhp.param(std::string("torque_command_topic"), DEFAULT_TORQUE_COMMAND_TOPIC);
-    const std::string config_feedback_topic = nhp.param(std::string("config_feedback_topic"), DEFAULT_CONFIG_FEEDBACK_TOPIC);
-    const std::string abort_service = nhp.param(std::string("abort_service"), DEFAULT_ABORT_SERVICE);
-    const double control_rate = nhp.param(std::string("control_rate"), DEFAULT_CONTROL_RATE);
+    std::string torque_command_topic;
+    std::string velocity_command_topic;
+    std::string config_feedback_topic;
+    std::string abort_service;
+    double control_rate = DEFAULT_CONTROL_RATE;
+    nhp.param(std::string("torque_command_topic"), torque_command_topic, DEFAULT_TORQUE_COMMAND_TOPIC);
+    nhp.param(std::string("config_feedback_topic"), config_feedback_topic, DEFAULT_CONFIG_FEEDBACK_TOPIC);
+    nhp.param(std::string("velocity_command_topic"), velocity_command_topic, DEFAULT_VELOCITY_COMMAND_TOPIC);
+    nhp.param(std::string("abort_service"), abort_service, DEFAULT_ABORT_SERVICE);
+    nhp.param(std::string("control_rate"), control_rate, DEFAULT_CONTROL_RATE);
     // Get the XML string of the URDF
     const std::string xml_model_string = nh.param(std::string("robot_description"), std::string(""));
     // Joint limits
