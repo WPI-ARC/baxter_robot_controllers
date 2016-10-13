@@ -24,18 +24,21 @@ int main(int argc, char** argv)
     const std::string DEFAULT_ABORT_SERVICE = "baxter_left_arm_velocity_torque_controller/abort";
     const double DEFAULT_CONTROL_RATE = 1000.0; //25.0;
     const bool DEFAULT_MODEL_GRAVITY = false;
+    const int32_t DEFAULT_VELOCITY_FILTER_WINDOW_SIZE = 1;
     std::string torque_command_topic;
     std::string velocity_command_topic;
     std::string config_feedback_topic;
     std::string abort_service;
     double control_rate = DEFAULT_CONTROL_RATE;
     bool model_gravity = DEFAULT_MODEL_GRAVITY;
+    int32_t velocity_filter_window_size = DEFAULT_VELOCITY_FILTER_WINDOW_SIZE;
     nhp.param(std::string("torque_command_topic"), torque_command_topic, DEFAULT_TORQUE_COMMAND_TOPIC);
     nhp.param(std::string("config_feedback_topic"), config_feedback_topic, DEFAULT_CONFIG_FEEDBACK_TOPIC);
     nhp.param(std::string("velocity_command_topic"), velocity_command_topic, DEFAULT_VELOCITY_COMMAND_TOPIC);
     nhp.param(std::string("abort_service"), abort_service, DEFAULT_ABORT_SERVICE);
     nhp.param(std::string("control_rate"), control_rate, DEFAULT_CONTROL_RATE);
     nhp.param(std::string("model_gravity"), model_gravity, DEFAULT_MODEL_GRAVITY);
+    nhp.param(std::string("velocity_filter_window_size"), velocity_filter_window_size, DEFAULT_VELOCITY_FILTER_WINDOW_SIZE);
     // Get the XML string of the URDF
     std::string xml_model_string;
     nh.param(std::string("robot_description"), xml_model_string, std::string(""));
@@ -43,7 +46,7 @@ int main(int argc, char** argv)
     const std::map<std::string, baxter_robot_controllers::JointLimits> joint_limits = baxter_robot_controllers::GetLeftArmLimits();
     // Joint PID params
     const std::map<std::string, baxter_robot_controllers::PIDParams> joint_controller_params = baxter_robot_controllers::GetLeftArmDefaultVelocityControllerParams();
-    baxter_robot_controllers::BaxterRobotVelocityTorqueController controller(nh, velocity_command_topic, config_feedback_topic, torque_command_topic, abort_service, xml_model_string, model_gravity, joint_limits, joint_controller_params);
+    baxter_robot_controllers::BaxterRobotVelocityTorqueController controller(nh, velocity_command_topic, config_feedback_topic, torque_command_topic, abort_service, xml_model_string, model_gravity, (uint32_t)velocity_filter_window_size, joint_limits, joint_controller_params);
     ROS_INFO("...startup complete");
     controller.Loop(control_rate);
     return 0;

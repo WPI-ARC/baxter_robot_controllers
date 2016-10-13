@@ -41,6 +41,10 @@ namespace baxter_robot_controllers
         bool current_config_valid_;
         std::vector<double> target_velocities_;
         std::vector<double> current_config_;
+
+        uint32_t velocity_filter_window_size_;
+        std::vector<std::vector<double>> velocity_filter_window_;
+
         std::vector<double> current_velocities_;
         std::vector<double> current_accelerations_;
         ros::Time last_config_time_;
@@ -63,6 +67,7 @@ namespace baxter_robot_controllers
                                             const std::string& abort_service,
                                             const std::string& xml_model_string,
                                             const bool model_gravity,
+                                            const uint32_t velocity_filter_window_size,
                                             const std::map<std::string, JointLimits> joint_limits,
                                             const std::map<std::string, PIDParams> joint_controller_params) : nh_(nh)
         {
@@ -70,6 +75,9 @@ namespace baxter_robot_controllers
             current_config_valid_ = false;
             target_velocities_ = std::vector<double>();
             current_config_ = std::vector<double>();
+            assert(velocity_filter_window_size >= 1u);
+            velocity_filter_window_size_ = velocity_filter_window_size;
+            velocity_filter_window_ = std::vector<std::vector<double>>();
             current_velocities_ = std::vector<double>();
             current_accelerations_ = std::vector<double>();
             assert(SetsEqual(arc_helpers::GetKeys(joint_limits), arc_helpers::GetKeys(joint_controller_params)));
@@ -431,6 +439,17 @@ namespace baxter_robot_controllers
             }
         }
 
+        inline std::vector<double> FilterVelocities(const std::vector<std::vector<double>>& velocities) const
+        {
+            std::vector<Eigen::VectorXd> window_velocities(velocities.size());
+            for (size_t idx = 0; idx < velocities.size(); idx++)
+            {
+                window_velocities[idx] = EigenHelpers::StdVectorDoubleToEigenVectorXd(velocities[idx]);
+            }
+            const Eigen::VectorXd average_velocity = EigenHelpers::AverageEigenVectorXd(window_velocities);
+            return EigenHelpers::EigenVectorXdToStdVectorDouble(average_velocity);
+        }
+
         inline void ConfigFeedbackCallback(sensor_msgs::JointState config_feedback)
         {
             if ((config_feedback.name.size() == config_feedback.position.size()) && (config_feedback.name.size() == config_feedback.velocity.size()) && IsSubset(config_feedback.name, joint_names_))
@@ -467,26 +486,45 @@ namespace baxter_robot_controllers
                 }
                 if (config_valid == true)
                 {
-                    current_config_ = current_config;
-                    const std::vector<double> last_velocities = current_velocities_;
-                    current_velocities_ = current_velocities;
-                    // Compute accelerations if we have valid previous data
-                    if (current_config_valid_)
+                    // Update the velocity filter window
+                    if (velocity_filter_window_.size() < velocity_filter_window_size_)
                     {
-                        const ros::Time& current_time = config_feedback.header.stamp;
-                        const ros::Time& previous_time = last_config_time_;
-                        const ros::Duration interval = current_time - previous_time;
-                        const std::vector<double> velocity_delta = EigenHelpers::Sub(current_velocities_, last_velocities);
-                        const double time_interval = interval.toSec();
-                        const std::vector<double> accelerations = EigenHelpers::Divide(velocity_delta, time_interval);
-                        current_accelerations_ = accelerations;
+                        velocity_filter_window_.push_back(current_velocities);
                     }
                     else
                     {
-                        current_accelerations_ = std::vector<double>(current_velocities.size(), 0.0);
+                        velocity_filter_window_.erase(velocity_filter_window_.begin(), velocity_filter_window_.begin() + 1);
+                        velocity_filter_window_.push_back(current_velocities);
                     }
-                    current_config_valid_ = true;
-                    last_config_time_ = config_feedback.header.stamp;
+                    // If our filter window is full, keep going
+                    if (velocity_filter_window_.size() == velocity_filter_window_size_)
+                    {
+                        current_config_ = current_config;
+                        const std::vector<double> last_velocities = current_velocities_;
+                        current_velocities_ = FilterVelocities(velocity_filter_window_);
+                        // Compute accelerations if we have valid previous data
+                        if (current_config_valid_)
+                        {
+                            const ros::Time& current_time = config_feedback.header.stamp;
+                            const ros::Time& previous_time = last_config_time_;
+                            const ros::Duration interval = current_time - previous_time;
+                            const std::vector<double> velocity_delta = EigenHelpers::Sub(current_velocities_, last_velocities);
+                            const double time_interval = interval.toSec();
+                            const std::vector<double> accelerations = EigenHelpers::Divide(velocity_delta, time_interval);
+                            current_accelerations_ = accelerations;
+                        }
+                        else
+                        {
+                            current_accelerations_ = std::vector<double>(current_velocities.size(), 0.0);
+                        }
+                        current_config_valid_ = true;
+                        last_config_time_ = config_feedback.header.stamp;
+                    }
+                    else
+                    {
+                        ROS_INFO("Waiting to fill velocity filter window for the first time...");
+                        current_config_valid_ = false;
+                    }
                 }
             }
             else if (config_feedback.name.size() == 1 && config_feedback.position.size() == 1)
