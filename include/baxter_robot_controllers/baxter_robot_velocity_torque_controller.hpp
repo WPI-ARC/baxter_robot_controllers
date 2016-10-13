@@ -62,6 +62,7 @@ namespace baxter_robot_controllers
                                             const std::string& torque_command_topic,
                                             const std::string& abort_service,
                                             const std::string& xml_model_string,
+                                            const bool model_gravity,
                                             const std::map<std::string, JointLimits> joint_limits,
                                             const std::map<std::string, PIDParams> joint_controller_params) : nh_(nh)
         {
@@ -104,8 +105,8 @@ namespace baxter_robot_controllers
                 assert(false);
             }
             // Setup ID solver
-            //id_solver_ = std::shared_ptr<KDL::ChainIdSolver_RNE>(new KDL::ChainIdSolver_RNE(chain_, KDL::Vector(0.0, 0.0, -9.8)));
-            id_solver_ = std::shared_ptr<KDL::ChainIdSolver_RNE>(new KDL::ChainIdSolver_RNE(chain_, KDL::Vector(0.0, 0.0, 0.0)));
+            const KDL::Vector gravity = model_gravity ? KDL::Vector(0.0, 0.0, -9.81) : KDL::Vector(0.0, 0.0, 0.0);
+            id_solver_ = std::shared_ptr<KDL::ChainIdSolver_RNE>(new KDL::ChainIdSolver_RNE(chain_, gravity));
             // Setup publishers and subscribers
             command_pub_ = nh_.advertise<baxter_core_msgs::JointCommand>(torque_command_topic, 1, false);
             feedback_sub_ = nh_.subscribe(config_feedback_topic, 1, &BaxterRobotVelocityTorqueController::ConfigFeedbackCallback, this);
