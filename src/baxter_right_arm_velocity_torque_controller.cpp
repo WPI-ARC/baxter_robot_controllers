@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     // Joint limits
     const std::map<std::string, baxter_robot_controllers::JointLimits> joint_limits = baxter_robot_controllers::GetRightArmLimits();
     // Joint PID params
-    const std::map<std::string, baxter_robot_controllers::PIDParams> joint_controller_params = baxter_robot_controllers::GetRightArmDefaultPositionControllerParams();
+    const std::map<std::string, baxter_robot_controllers::PIDParams> joint_controller_params = baxter_robot_controllers::GetRightArmDefaultVelocityControllerParams();
     baxter_robot_controllers::BaxterRobotVelocityTorqueController controller(nh, velocity_command_topic, config_feedback_topic, torque_command_topic, abort_service, xml_model_string, model_gravity, joint_limits, joint_controller_params);
     ROS_INFO("...startup complete");
     controller.Loop(control_rate);
