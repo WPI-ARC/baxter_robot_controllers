@@ -166,8 +166,11 @@ namespace baxter_robot_controllers
         {
             assert(joint_names_.size() == current_config.size());
             assert(joint_names_.size() == target_config.size());
+            //std::cout << "Current config: " << PrettyPrint::PrettyPrint(current_config) << std::endl;
+            //std::cout << "Target config: " << PrettyPrint::PrettyPrint(target_config) << std::endl;
             // Compute the pose error in our 'world frame'
             const std::vector<double> config_errors = ComputeConfigError(current_config, target_config);
+            //std::cout << "Current errors: " << PrettyPrint::PrettyPrint(config_errors) << std::endl;
             // Compute the integral of pose error & update the stored value
             const std::vector<double> config_error_integrals_update = EigenHelpers::Add(EigenHelpers::Multiply(last_config_errors_, 0.5), EigenHelpers::Multiply(config_errors, 0.0));
             config_error_integrals_ = ComputeNewConfigErrorIntegral(EigenHelpers::Add(config_error_integrals_, config_error_integrals_update), joint_names_, joint_controller_params_);
@@ -192,6 +195,7 @@ namespace baxter_robot_controllers
                 const double feedback_term = p_term + i_term + d_term;
                 feedback_terms[idx] = feedback_term;
             }
+            //std::cout << "Feedback command: " << PrettyPrint::PrettyPrint(feedback_terms) << std::endl;
             return feedback_terms;
         }
 

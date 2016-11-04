@@ -204,13 +204,29 @@ namespace baxter_robot_controllers
     inline std::map<std::string, PIDParams> GetRightArmDefaultVelocityControllerParams()
     {
         std::map<std::string, baxter_robot_controllers::PIDParams> joint_controller_params;
-        joint_controller_params["right_s0"] = baxter_robot_controllers::PIDParams(2.0, 0.0, 0.0, 0.0);
-        joint_controller_params["right_s1"] = baxter_robot_controllers::PIDParams(8.0, 0.0, 0.0, 0.0);
-        joint_controller_params["right_e0"] = baxter_robot_controllers::PIDParams(3.0, 0.0, 0.0, 0.0);
-        joint_controller_params["right_e1"] = baxter_robot_controllers::PIDParams(5.0, 0.0, 0.0, 0.0);
-        joint_controller_params["right_w0"] = baxter_robot_controllers::PIDParams(2.0, 0.0, 0.0, 0.0);
-        joint_controller_params["right_w1"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.0, 0.0);
-        joint_controller_params["right_w2"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.0, 0.0);
+        // Slow, bad
+//        joint_controller_params["right_s0"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.000001, 0.0);
+//        joint_controller_params["right_s1"] = baxter_robot_controllers::PIDParams(4.0, 0.0, 0.000001, 0.0);
+//        joint_controller_params["right_e0"] = baxter_robot_controllers::PIDParams(1.5, 0.0, 0.000001, 0.0);
+//        joint_controller_params["right_e1"] = baxter_robot_controllers::PIDParams(2.5, 0.0, 0.000001, 0.0);
+//        joint_controller_params["right_w0"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.000001, 0.0);
+//        joint_controller_params["right_w1"] = baxter_robot_controllers::PIDParams(0.5, 0.0, 0.000001, 0.0);
+//        joint_controller_params["right_w2"] = baxter_robot_controllers::PIDParams(0.5, 0.0, 0.000001, 0.0);
+        // Stable, okish
+//        joint_controller_params["right_s0"] = baxter_robot_controllers::PIDParams(2.0, 0.0, 0.001, 0.0);
+//        joint_controller_params["right_s1"] = baxter_robot_controllers::PIDParams(8.0, 0.0, 0.001, 0.0);
+//        joint_controller_params["right_e0"] = baxter_robot_controllers::PIDParams(3.0, 0.0, 0.001, 0.0);
+//        joint_controller_params["right_e1"] = baxter_robot_controllers::PIDParams(5.0, 0.0, 0.001, 0.0);
+//        joint_controller_params["right_w0"] = baxter_robot_controllers::PIDParams(2.0, 0.0, 0.001, 0.0);
+//        joint_controller_params["right_w1"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.001, 0.0);
+//        joint_controller_params["right_w2"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.001, 0.0);
+        joint_controller_params["right_s0"] = baxter_robot_controllers::PIDParams(2.0, 0.0, 0.001, 0.0);
+        joint_controller_params["right_s1"] = baxter_robot_controllers::PIDParams(8.0, 0.0, 0.001, 0.0);
+        joint_controller_params["right_e0"] = baxter_robot_controllers::PIDParams(3.0, 0.0, 0.001, 0.0);
+        joint_controller_params["right_e1"] = baxter_robot_controllers::PIDParams(5.0, 0.0, 0.001, 0.0);
+        joint_controller_params["right_w0"] = baxter_robot_controllers::PIDParams(2.0, 0.0, 0.001, 0.0);
+        joint_controller_params["right_w1"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.001, 0.0);
+        joint_controller_params["right_w2"] = baxter_robot_controllers::PIDParams(1.0, 0.0, 0.001, 0.0);
         return joint_controller_params;
     }
 
