@@ -16,7 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   kdl_parser
 )
 find_package(cmake_modules REQUIRED)
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
+set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -62,7 +63,7 @@ find_package(Eigen REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(INCLUDE_DIRS include
 #  LIBRARIES baxter_robot_controllers
-CATKIN_DEPENDS arc_utilities geometry_msgs trajectory_msgs control_msgs baxter_core_msgs roscpp sensor_msgs std_msgs kdl_parser DEPENDS system_lib Eigen)
+CATKIN_DEPENDS arc_utilities geometry_msgs trajectory_msgs control_msgs baxter_core_msgs roscpp sensor_msgs std_msgs kdl_parser DEPENDS system_lib Eigen3)
 
 ###########
 ## Build ##
@@ -71,7 +72,7 @@ CATKIN_DEPENDS arc_utilities geometry_msgs trajectory_msgs control_msgs baxter_c
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
-include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
+include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wconversion")
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -Wall -Wextra -Wconversion -O3 -g")
